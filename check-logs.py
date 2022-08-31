@@ -36,34 +36,50 @@ else:
 
 def main():
     t = time.time()
-    five_minutues_time = int(t * 1000) - 300000
-    ten_minutes_time = int(t * 1000) - 600000
+    # 35 mins ago
+    start_time = int(t * 1000) - 2100000
+    # 5 mins ago
+    end_time = int(t * 1000) - 300000
 
     handling_query = client.start_query(
         logGroupName = '/ecs/sis-production-inf-service-active-content',
-        startTime = ten_minutes_time,
-        endTime = five_minutues_time,
+        startTime = start_time,
+        endTime = end_time,
         queryString = "fields @message | filter @message like 'Handling expired channel timeline' | stats count(@message) as Handling"
     )
     new_timeline_query = client.start_query(
         logGroupName = '/ecs/sis-production-inf-service-active-content',
-        startTime = ten_minutes_time,
-        endTime = five_minutues_time,
+        startTime = start_time,
+        endTime = end_time,
         queryString = "fields @message | filter @message like 'New timeline found' | stats count(@message) as NewTimeline"
     )
+    DEADLINE_EXCEEDED_query = client.start_query(
+        logGroupName = '/ecs/sis-production-inf-service-active-content',
+        startTime = start_time,
+        endTime = end_time,
+        queryString = "fields @message | filter @message like 'DEADLINE_EXCEEDED' | stats count(@message) as DeadlineExceeded"
+    )
+
     time.sleep(5)
 
     new_timeline_results = client.get_query_results(queryId = str(new_timeline_query['queryId']))['results'][0][0]['value']
     handling_results = client.get_query_results(queryId = str(handling_query['queryId']))['results'][0][0]['value']
-
+    DEADLINE_EXCEEDED_results = client.get_query_results(queryId = str(DEADLINE_EXCEEDED_query['queryId']))['results']
     if new_timeline_results != handling_results:
         print('TIMELINES ARE OUT OF SYNC RESTART ACS')
-        print(f'NewTimeline:    {new_timeline_results}')
-        print(f'Handling:       {handling_results}')
+        print(f'NewTimeline:        {new_timeline_results}')
+        print(f'ExpiredHandling:    {handling_results}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
+    elif DEADLINE_EXCEEDED_results != []:
+        print('DEADLINE_EXCEEDED RESTART ACS')
+        print(f'NewTimeline:        {new_timeline_results}')
+        print(f'ExpiredHandling:    {handling_results}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
     else:
         print('timelines in sync')
-        print(f'NewTimeline:    {new_timeline_results}')
-        print(f'Handling:       {handling_results}')
+        print(f'NewTimeline:        {new_timeline_results}')
+        print(f'ExpiredHandling:    {handling_results}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
 
 if __name__ == '__main__':
     main()
