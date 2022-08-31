@@ -17,11 +17,11 @@ if args.execution == 'local':
         'preprod': 290745908312
     }
     sts_client = boto3.client('sts')
-    ProductionAssumed_Role_object = sts_client.assume_role(
+    Assumed_Role_object = sts_client.assume_role(
         RoleArn = f"arn:aws:iam::{accounts[args.profile.lower()]}:role/{args.tier}",
         RoleSessionName = f"acslog-query-{args.tier}"
     )
-    credentials = ProductionAssumed_Role_object['Credentials']
+    credentials = Assumed_Role_object['Credentials']
     client = boto3.client('logs', 'us-east-1',
         aws_access_key_id = credentials['AccessKeyId'],
         aws_secret_access_key = credentials['SecretAccessKey'],
