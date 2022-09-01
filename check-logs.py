@@ -57,13 +57,13 @@ def main():
         logGroupName = '/ecs/sis-production-inf-service-active-content',
         startTime = start_time,
         endTime = end_time,
-        queryString = "fields @message | filter @message like 'Handling expired channel timeline' | stats count(@message) as Handling"
+        queryString = """fields @message | filter @message like 'Handling expired channel timeline' | parse data '"channelID":"*"' as channel_id | stats count_distinct(channel_id) as Handling"""
     )
     new_timeline_query = client.start_query(
         logGroupName = '/ecs/sis-production-inf-service-active-content',
         startTime = start_time,
         endTime = end_time,
-        queryString = "fields @message | filter @message like 'New timeline found' | stats count(@message) as NewTimeline"
+        queryString = """fields @message | filter @message like 'New timeline found' | parse data '"channelID":"*"' as channel_id | stats count_distinct(channel_id) as NewTimeline"""
     )
     DEADLINE_EXCEEDED_query = client.start_query(
         logGroupName = '/ecs/sis-production-inf-service-active-content',
