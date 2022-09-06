@@ -46,7 +46,7 @@ def acsRestartTriageSlack(message_text):
             % (response.status_code, response.text)
         )
 
-def main():
+def queryLogs():
     t = time.time()
     # 35 mins ago
     start_time = int(t * 1000) - 2100000
@@ -73,37 +73,53 @@ def main():
     )
 
     time.sleep(5)
-
     new_timeline_results = client.get_query_results(queryId = str(new_timeline_query['queryId']))['results'][0][0]['value']
     handling_results = client.get_query_results(queryId = str(handling_query['queryId']))['results'][0][0]['value']
     DEADLINE_EXCEEDED_results = client.get_query_results(queryId = str(DEADLINE_EXCEEDED_query['queryId']))['results']
-    if new_timeline_results != handling_results:
-        print('TIMELINES ARE OUT OF SYNC RESTART ACS')
-        print(f'NewTimeline:        {new_timeline_results}')
-        print(f'ExpiredHandling:    {handling_results}')
-        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
-        slack_message.append('TIMELINES ARE OUT OF SYNC RESTART ACS')
-        slack_message.append(f'NewTimeline:        {new_timeline_results}')
-        slack_message.append(f'ExpiredHandling:    {handling_results}')
-        slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
-        slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
-        acsRestartTriageSlack(slack_message_json)
-    elif DEADLINE_EXCEEDED_results != []:
-        print('DEADLINE_EXCEEDED RESTART ACS')
-        print(f'NewTimeline:        {new_timeline_results}')
-        print(f'ExpiredHandling:    {handling_results}')
-        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
-        slack_message.append('DEADLINE_EXCEEDED RESTART ACS')
-        slack_message.append(f'NewTimeline:        {new_timeline_results}')
-        slack_message.append(f'ExpiredHandling:    {handling_results}')
+
+    return new_timeline_results, handling_results, DEADLINE_EXCEEDED_results
+
+def main():
+    new_timeline, handling, DEADLINE_EXCEEDED = queryLogs()
+    if new_timeline != handling:
+        print('timelines are out of sync, trying again in 1 min')
+        print(f'NewTimeline:        {new_timeline}')
+        print(f'ExpiredHandling:    {handling}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED}')
+        time.sleep(60)
+        new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_retry = queryLogs()
+        if new_timeline_retry != handling_retry:
+            print(f'TIMELINES ARE OUT OF SYNC')
+            print(f'NewTimeline:        {new_timeline_retry}')
+            print(f'ExpiredHandling:    {handling_retry}')
+            print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_retry}')
+            slack_message.append('TIMELINES ARE OUT OF SYNC')
+            slack_message.append(f'NewTimeline:        {new_timeline_retry}')
+            slack_message.append(f'ExpiredHandling:    {handling_retry}')
+            slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_retry}')
+            slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
+            acsRestartTriageSlack(slack_message_json)
+        else:
+            print(f'timelines recovered')
+            print(f'NewTimeline:        {new_timeline_retry}')
+            print(f'ExpiredHandling:    {handling_retry}')
+            print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_retry}')
+    elif DEADLINE_EXCEEDED != []:
+        print('DEADLINE_EXCEEDED')
+        print(f'NewTimeline:        {new_timeline}')
+        print(f'ExpiredHandling:    {handling}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED}')
+        slack_message.append('DEADLINE_EXCEEDED')
+        slack_message.append(f'NewTimeline:        {new_timeline}')
+        slack_message.append(f'ExpiredHandling:    {handling}')
         slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
         slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
         acsRestartTriageSlack(slack_message_json)
     else:
         print('ACS timelines in sync')
-        print(f'NewTimeline:        {new_timeline_results}')
-        print(f'ExpiredHandling:    {handling_results}')
-        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
+        print(f'NewTimeline:        {new_timeline}')
+        print(f'ExpiredHandling:    {handling}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED}')
 
 if __name__ == '__main__':
     main()
