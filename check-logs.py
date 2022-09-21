@@ -38,7 +38,7 @@ else:
     )
 
 def acsRestartTriageSlack(message_text):
-    url = 'https://hooks.slack.com/services/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'
+    url = 'https://hooks.slack.com/services/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'
     response = requests.post(url, json = message_text, headers = {"Content-type": "application/json"})
     if response.status_code != 200:
         raise ValueError(
