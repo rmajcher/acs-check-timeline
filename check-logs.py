@@ -126,7 +126,7 @@ def main():
         acsRestartTriageSlack(slack_message_json)
         exit()
     else:
-        print('ACS timelines in sync')
+        print('ACS is like Fonzie')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
         print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
