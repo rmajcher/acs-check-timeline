@@ -81,45 +81,55 @@ def queryLogs():
 
 def main():
     new_timeline, handling, DEADLINE_EXCEEDED = queryLogs()
+    try:
+        DEADLINE_EXCEEDED_format = DEADLINE_EXCEEDED[0][0]["value"]
+    except:
+        DEADLINE_EXCEEDED_format = 0
+
     if new_timeline != handling:
         print('timelines are out of sync, trying again in 1 min')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
-        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
         time.sleep(60)
         new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_retry = queryLogs()
+        try:
+            DEADLINE_EXCEEDED_format_retry = DEADLINE_EXCEEDED_retry[0][0]["value"]
+        except:
+            DEADLINE_EXCEEDED_format_retry = 0
         if new_timeline_retry != handling_retry:
             print(f'TIMELINES ARE OUT OF SYNC')
             print(f'NewTimeline:        {new_timeline_retry}')
             print(f'ExpiredHandling:    {handling_retry}')
-            print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_retry}')
+            print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
             slack_message.append('TIMELINES ARE OUT OF SYNC')
             slack_message.append(f'NewTimeline:        {new_timeline_retry}')
             slack_message.append(f'ExpiredHandling:    {handling_retry}')
-            slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_retry}')
+            slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
             slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
             acsRestartTriageSlack(slack_message_json)
         else:
             print(f'timelines recovered')
             print(f'NewTimeline:        {new_timeline_retry}')
             print(f'ExpiredHandling:    {handling_retry}')
-            print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_retry}')
-    elif DEADLINE_EXCEEDED != []:
+            print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
+    elif int(DEADLINE_EXCEEDED_format) > 5000:
         print('DEADLINE_EXCEEDED')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
-        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
         slack_message.append('DEADLINE_EXCEEDED')
         slack_message.append(f'NewTimeline:        {new_timeline}')
         slack_message.append(f'ExpiredHandling:    {handling}')
-        slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_results}')
+        slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
         slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
         acsRestartTriageSlack(slack_message_json)
+        exit()
     else:
         print('ACS timelines in sync')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
-        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED}')
+        print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
 
 if __name__ == '__main__':
     main()
