@@ -9,6 +9,7 @@ description = \
 
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument("-e", "--execution", default='local', help="determines if the script is running in AWS or Lambda function or on local machine: local / lambda", required=False)
+parser.add_argument('-r', '--restartacs', help='restart acs if Deadline Exceeded errors are greater than 1000 in 15 mins: yes / no', default='no', required=False)
 parser.add_argument('-t', '--tier', help='specify other SecOps user tier default: ProdOpsTier4', default='ProdOpsTier4', required=False)
 parser.add_argument('-p', '--profile',help='specify AWS account: prod / preprod default: prod', default='prod', required=False)
 args=parser.parse_args()
@@ -31,8 +32,14 @@ if args.execution == 'local':
         aws_secret_access_key = credentials['SecretAccessKey'],
         aws_session_token = credentials['SessionToken'],
     )
+    lambda_client = boto3.client('lambda', 'us-east-1',
+        aws_access_key_id = credentials['AccessKeyId'],
+        aws_secret_access_key = credentials['SecretAccessKey'],
+        aws_session_token = credentials['SessionToken'],
+    )
 else:
     client = boto3.client('logs', 'us-east-1')
+    lambda_client = boto3.client('lambda', 'us-east-1')
 
 def trigger_incident(ALERT_SUMMARY, new_timeline, handling, DEADLINE_EXCEEDED):
     ROUTING_KEY = "2fd0cc1d72304d09c0e4766561995e7c" # ENTER EVENTS V2 API INTEGRATION KEY HERE
@@ -78,8 +85,8 @@ def acsRestartTriageSlack(message_text):
 
 def queryLogs():
     t = time.time()
-    # 35 mins ago
-    start_time = int(t * 1000) - 2100000
+    # 20 mins ago
+    start_time = int(t * 1000) - 1200000
     # 5 mins ago
     end_time = int(t * 1000) - 300000
 
@@ -127,6 +134,8 @@ def main():
             DEADLINE_EXCEEDED_format_retry = DEADLINE_EXCEEDED_retry[0][0]["value"]
         except:
             DEADLINE_EXCEEDED_format_retry = 0
+
+        # NewTimeline and ExpiredHandling don't equal
         if new_timeline_retry != handling_retry:
             print(f'TIMELINES ARE OUT OF SYNC')
             print(f'NewTimeline:        {new_timeline_retry}')
@@ -145,7 +154,8 @@ def main():
             print(f'NewTimeline:        {new_timeline_retry}')
             print(f'ExpiredHandling:    {handling_retry}')
             print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
-    elif int(DEADLINE_EXCEEDED_format) > 5000:
+    # deadline exceeded greater than 1000 for 15 min period
+    elif int(DEADLINE_EXCEEDED_format) > 1000:
         print('DEADLINE_EXCEEDED')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
@@ -155,8 +165,22 @@ def main():
         slack_message.append(f'ExpiredHandling:    {handling}')
         slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
         slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
+
+        # send alert to pager duty Ops 24/7 group
         trigger_incident('ACS Deadline Exceeded', new_timeline, handling, DEADLINE_EXCEEDED_format)
-        #acsRestartTriageSlack(slack_message_json)
+
+        # send message to #acs-alerts slack channel webhook is currently borken
+#        acsRestartTriageSlack(slack_message_json)
+
+        if args.restartacs.lower() == 'yes':
+            # restart ACS with sis-production_inf-service-active-content_automated-restart lambda function
+            print('restarting ACS with sis-production_inf-service-active-content_automated-restart lambda function')
+            response = lambda_client.invoke(
+                FunctionName='sis-production_inf-service-active-content_automated-restart',
+                InvocationType='Event',
+                LogType='None'
+            )
+            print(response)
         exit()
     else:
         print('ACS is like Fonzie')
