@@ -118,7 +118,7 @@ def main():
     try:
         DEADLINE_EXCEEDED_format = DEADLINE_EXCEEDED[0][0]["value"]
     except:
-        DEADLINE_EXCEEDED_format = 6000
+        DEADLINE_EXCEEDED_format = 0
 
     if new_timeline != handling:
         print('timelines are out of sync, trying again in 1 min')
