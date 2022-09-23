@@ -2,6 +2,7 @@ import boto3
 import argparse, sys
 import time
 import requests
+import json
 
 description = \
 """Query ACS CloudWatch Logs"""
@@ -36,6 +37,39 @@ else:
         aws_secret_access_key = credentials['SecretAccessKey'],
         aws_session_token = credentials['SessionToken'],
     )
+
+def trigger_incident(ALERT_SUMMARY, new_timeline, handling, DEADLINE_EXCEEDED):
+    ROUTING_KEY = "2fd0cc1d72304d09c0e4766561995e7c" # ENTER EVENTS V2 API INTEGRATION KEY HERE
+    # Triggers a PagerDuty incident without a previously generated incident key
+    # Uses Events V2 API - documentation: https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+
+    header = {
+        "Content-Type": "application/json"
+    }
+
+    payload = { # Payload is built with the least amount of fields required to trigger an incident
+        "routing_key": ROUTING_KEY,
+        "event_action": "trigger",
+        "payload": {
+            "summary": ALERT_SUMMARY,
+            "source": "aws-check-timline python script",
+            "severity": "critical",
+            "custom_details": {
+              "NewTimeline": new_timeline,
+              "ExpiredHandling": handling,
+              "DeadlineExceeded": DEADLINE_EXCEEDED
+            }
+        }
+    }
+
+    response = requests.post('https://events.pagerduty.com/v2/enqueue',
+                            data=json.dumps(payload),
+                            headers=header)
+
+    if response.json()["status"] == "success":
+        print('Incident created with with dedup key (also known as incident / alert key) of ' + '"' + response.json()['dedup_key'] + '"')
+    else:
+        print(response.text) # print error message if not successful
 
 def acsRestartTriageSlack(message_text):
     url = 'https://hooks.slack.com/services/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'
@@ -84,7 +118,7 @@ def main():
     try:
         DEADLINE_EXCEEDED_format = DEADLINE_EXCEEDED[0][0]["value"]
     except:
-        DEADLINE_EXCEEDED_format = 0
+        DEADLINE_EXCEEDED_format = 6000
 
     if new_timeline != handling:
         print('timelines are out of sync, trying again in 1 min')
@@ -107,7 +141,9 @@ def main():
             slack_message.append(f'ExpiredHandling:    {handling_retry}')
             slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
             slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
-            acsRestartTriageSlack(slack_message_json)
+            trigger_incident('ACS Timlines Out of Sync', new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_format_retry)
+            #acsRestartTriageSlack(slack_message_json)
+            exit()
         else:
             print(f'timelines recovered')
             print(f'NewTimeline:        {new_timeline_retry}')
@@ -123,7 +159,8 @@ def main():
         slack_message.append(f'ExpiredHandling:    {handling}')
         slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
         slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
-        acsRestartTriageSlack(slack_message_json)
+        trigger_incident('ACS Deadline Exceeded', new_timeline, handling, DEADLINE_EXCEEDED_format)
+        #acsRestartTriageSlack(slack_message_json)
         exit()
     else:
         print('ACS is like Fonzie')
