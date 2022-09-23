@@ -8,7 +8,7 @@ description = \
 """Query ACS CloudWatch Logs"""
 
 parser = argparse.ArgumentParser(description=description)
-parser.add_argument("-e", "--execution", default='local', help="determines if the script is running in AWS or Lambda function or on local machine: local / lambda", required=False)
+parser.add_argument("-e", "--execution", help="determines if the script is running in AWS or Lambda function or on local machine: local / lambda", default='local', required=False)
 parser.add_argument('-r', '--restartacs', help='restart acs if Deadline Exceeded errors are greater than 1000 in 15 mins: yes / no', default='no', required=False)
 parser.add_argument('-t', '--tier', help='specify other SecOps user tier default: ProdOpsTier4', default='ProdOpsTier4', required=False)
 parser.add_argument('-p', '--profile',help='specify AWS account: prod / preprod default: prod', default='prod', required=False)
@@ -146,7 +146,7 @@ def main():
             slack_message.append(f'ExpiredHandling:    {handling_retry}')
             slack_message.append(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
             slack_message_json = {"text": '\n'.join([str(item) for item in slack_message])}
-            trigger_incident('ACS Timlines Out of Sync', new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_format_retry)
+            trigger_incident('ACS Timelines Out of Sync', new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_format_retry)
             #acsRestartTriageSlack(slack_message_json)
             exit()
         else:
