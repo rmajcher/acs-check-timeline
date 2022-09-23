@@ -68,7 +68,7 @@ def trigger_incident(ALERT_SUMMARY, new_timeline, handling, DEADLINE_EXCEEDED):
         print(response.text) # print error message if not successful
 
 def acsRestartTriageSlack(message_text):
-    url = 'https://hooks.slack.com/services/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'
+    url = 'https://hooks.slack.com/services/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'
     response = requests.post(url, json = message_text, headers = {"Content-type": "application/json"})
     if response.status_code != 200:
         raise ValueError(
