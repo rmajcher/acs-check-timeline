@@ -8,7 +8,7 @@ description = \
 """Query ACS CloudWatch Logs"""
 
 parser = argparse.ArgumentParser(description=description)
-parser.add_argument("-e", "--execution", default='local', help="determines if the script is running in AWS or on local machine: local / aws", required=False)
+parser.add_argument("-e", "--execution", default='local', help="determines if the script is running in AWS or Lambda function or on local machine: local / lambda", required=False)
 parser.add_argument('-t', '--tier', help='specify other SecOps user tier default: ProdOpsTier4', default='ProdOpsTier4', required=False)
 parser.add_argument('-p', '--profile',help='specify AWS account: prod / preprod default: prod', default='prod', required=False)
 args=parser.parse_args()
@@ -32,11 +32,7 @@ if args.execution == 'local':
         aws_session_token = credentials['SessionToken'],
     )
 else:
-    client = boto3.client('logs', 'us-east-1',
-        aws_access_key_id = credentials['AccessKeyId'],
-        aws_secret_access_key = credentials['SecretAccessKey'],
-        aws_session_token = credentials['SessionToken'],
-    )
+    client = boto3.client('logs', 'us-east-1')
 
 def trigger_incident(ALERT_SUMMARY, new_timeline, handling, DEADLINE_EXCEEDED):
     ROUTING_KEY = "2fd0cc1d72304d09c0e4766561995e7c" # ENTER EVENTS V2 API INTEGRATION KEY HERE
@@ -168,5 +164,12 @@ def main():
         print(f'ExpiredHandling:    {handling}')
         print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
 
-if __name__ == '__main__':
+# lambda handler
+def lambda_handler(event, context):
     main()
+
+if __name__ == '__main__':
+    if 'lambda' in args.execution:
+        lambda_handler()
+    else:
+        main()
