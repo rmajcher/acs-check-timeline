@@ -124,11 +124,11 @@ def main():
         DEADLINE_EXCEEDED_format = 0
 
     if new_timeline != handling:
-        print('timelines are out of sync, trying again in 1 min')
+        print('timelines are out of sync, trying again in 2 mins')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
         print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
-        time.sleep(60)
+        time.sleep(120)
         new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_retry = queryLogs()
         try:
             DEADLINE_EXCEEDED_format_retry = DEADLINE_EXCEEDED_retry[0][0]["value"]
