@@ -108,16 +108,25 @@ def queryLogs():
         endTime = end_time,
         queryString = "fields @message | filter @message like 'DEADLINE_EXCEEDED' | stats count(@message) as DeadlineExceeded"
     )
+    LILO_LCT_query = client.start_query(
+        logGroupNames = [
+            '/ecs/production/lilo-blue/service-lilo-lct',
+            '/ecs/production/lilo-green/service-lilo-lct'
+        ],
+        startTime = start_time,
+        endTime = end_time,
+        queryString = "fields @message | stats count(@message)"
+    )
 
     time.sleep(5)
     new_timeline_results = client.get_query_results(queryId = str(new_timeline_query['queryId']))['results'][0][0]['value']
     handling_results = client.get_query_results(queryId = str(handling_query['queryId']))['results'][0][0]['value']
     DEADLINE_EXCEEDED_results = client.get_query_results(queryId = str(DEADLINE_EXCEEDED_query['queryId']))['results']
-
-    return new_timeline_results, handling_results, DEADLINE_EXCEEDED_results
+    LILO_LCT_query_results = client.get_query_results(queryId = str(LILO_LCT_query['queryId']))['results'][0][0]['value']
+    return new_timeline_results, handling_results, DEADLINE_EXCEEDED_results, LILO_LCT_query_results
 
 def main():
-    new_timeline, handling, DEADLINE_EXCEEDED = queryLogs()
+    new_timeline, handling, DEADLINE_EXCEEDED, LILO_LCT = queryLogs()
     try:
         DEADLINE_EXCEEDED_format = DEADLINE_EXCEEDED[0][0]["value"]
     except:
@@ -182,11 +191,15 @@ def main():
             )
             print(response)
         exit()
+    elif int(LILO_LCT) < 2000:
+        print(f'LILO processing depressed:   {LILO_LCT}')
+        trigger_incident('Lilo Proccessing Depressed', LILO_LCT)
     else:
         print('ACS is like Fonzie')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
         print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
+        print(f'LiloProccessing:    {LILO_LCT}')
 
 # lambda handler
 def lambda_handler(event, context):
