@@ -191,7 +191,7 @@ def main():
             )
             print(response)
         exit()
-    elif int(LILO_LCT) < 2000:
+    elif int(LILO_LCT) < 5000:
         print(f'LILO processing depressed:   {LILO_LCT}')
         trigger_incident('Lilo Proccessing Depressed', LILO_LCT)
     else:
