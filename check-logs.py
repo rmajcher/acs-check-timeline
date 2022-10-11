@@ -193,7 +193,7 @@ def main():
         exit()
     elif int(LILO_LCT) < 5000:
         print(f'LILO processing depressed:   {LILO_LCT}')
-        trigger_incident('Lilo Proccessing Depressed', LILO_LCT)
+        trigger_incident('Lilo Proccessing Depressed', LILO_LCT, "https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:logs-insights$3FqueryDetail$3D$257E$2528end$257E0$257Estart$257E-900$257EtimeType$257E$2527RELATIVE$257Eunit$257E$2527seconds$257EeditorString$257E$2527fields*20*40message*0a*7c*20stats*20count*28*2a*29*20$257EisLiveTail$257Efalse$257EqueryId$257E$2527e764f145-befb-4c33-893a-fda0aea95de7$257Esource$257E$2528$257E$2527*2fecs*2fproduction*2flilo-blue*2fservice-lilo-lct$257E$2527*2fecs*2fproduction*2flilo-green*2fservice-lilo-lct$2529$2529")
     else:
         print('ACS is like Fonzie')
         print(f'NewTimeline:        {new_timeline}')
