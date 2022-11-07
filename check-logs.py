@@ -137,8 +137,9 @@ def main():
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
         print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
+        print(f'LILO processing:   {LILO_LCT}')
         time.sleep(120)
-        new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_retry = queryLogs()
+        new_timeline_retry, handling_retry, DEADLINE_EXCEEDED_retry, LILO_LCT_retry = queryLogs()
         try:
             DEADLINE_EXCEEDED_format_retry = DEADLINE_EXCEEDED_retry[0][0]["value"]
         except:
@@ -150,6 +151,7 @@ def main():
             print(f'NewTimeline:        {new_timeline_retry}')
             print(f'ExpiredHandling:    {handling_retry}')
             print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
+            print(f'LILO processing:   {LILO_LCT_retry}')
             slack_message.append('TIMELINES ARE OUT OF SYNC')
             slack_message.append(f'NewTimeline:        {new_timeline_retry}')
             slack_message.append(f'ExpiredHandling:    {handling_retry}')
@@ -163,12 +165,14 @@ def main():
             print(f'NewTimeline:        {new_timeline_retry}')
             print(f'ExpiredHandling:    {handling_retry}')
             print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format_retry}')
+            print(f'LILO processing:   {LILO_LCT_retry}')
     # deadline exceeded greater than 1000 for 15 min period
     elif int(DEADLINE_EXCEEDED_format) > 1000:
         print('DEADLINE_EXCEEDED')
         print(f'NewTimeline:        {new_timeline}')
         print(f'ExpiredHandling:    {handling}')
         print(f'DeadlineExceeded:   {DEADLINE_EXCEEDED_format}')
+        print(f'LILO processing:   {LILO_LCT}')
         slack_message.append('DEADLINE_EXCEEDED')
         slack_message.append(f'NewTimeline:        {new_timeline}')
         slack_message.append(f'ExpiredHandling:    {handling}')
